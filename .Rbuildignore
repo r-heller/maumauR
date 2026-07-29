@@ -7,9 +7,6 @@
 ^_pkgdown\.ya?ml$
 ^cran-comments\.md$
 ^LICENSE\.md$
-^CLAUDE.*\.md$
-^\.claude$
-^\.orchestration$
 ^codecov\.yml$
 ^\.lintr$
 ^revdep$

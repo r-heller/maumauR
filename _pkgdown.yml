@@ -54,6 +54,7 @@ reference:
       - mm_plot_game_length
       - mm_plot_draws
       - mm_plot_strategy_compare
+      - mm_theme
 
   - title: Application
     contents:

@@ -7,9 +7,5 @@ docs/
 inst/doc/
 *.Rcheck/
 *.tar.gz
-
-# orchestration / build prompts - not part of the package
-.orchestration/
-CLAUDE_CODE_*.md
 /doc/
 /Meta/

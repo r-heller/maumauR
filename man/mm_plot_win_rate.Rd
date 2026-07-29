@@ -16,7 +16,10 @@ A \code{ggplot} object.
 }
 \description{
 Draws the share of decided games each seat won, with a dashed line at the
-rate expected if seating did not matter.
+rate expected if seating did not matter. Several player counts get a panel
+each; a single player count is drawn without a strip and named in the
+caption instead. Each bar carries its rate at its base, and the caption
+records how many games the picture rests on.
 }
 \examples{
 sims <- mm_simulate(n = 30, n_players = 3, seed = 1)
@@ -29,6 +32,7 @@ mm_plot_win_rate(sims)
 Other plots:
 \code{\link[=mm_plot_draws]{mm_plot_draws()}},
 \code{\link[=mm_plot_game_length]{mm_plot_game_length()}},
-\code{\link[=mm_plot_strategy_compare]{mm_plot_strategy_compare()}}
+\code{\link[=mm_plot_strategy_compare]{mm_plot_strategy_compare()}},
+\code{\link[=mm_theme]{mm_theme()}}
 }
 \concept{plots}

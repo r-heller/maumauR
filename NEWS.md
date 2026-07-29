@@ -41,7 +41,13 @@ First release.
 ## Plots
 
 * `mm_plot_win_rate()`, `mm_plot_game_length()`, `mm_plot_draws()`,
-  `mm_plot_strategy_compare()`: colourblind-safe ggplot objects.
+  `mm_plot_strategy_compare()`: colourblind-safe ggplot objects. Data are
+  coloured with Okabe-Ito and the suite accent is kept for furniture, so no
+  reading depends on telling two hues apart. Each bar carries its rate at its
+  base, clear of the dashed line that marks what chance alone would pay, and
+  the caption records how many games the figure rests on.
+* `mm_theme()`: the theme those figures are drawn in, exported so that a plot
+  of your own can match them.
 
 ## Application
 

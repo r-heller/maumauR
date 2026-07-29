@@ -12,35 +12,59 @@ rm(mm_module)
 # The application directory is named after the package that ships it, so the
 # identity below is derived rather than hardcoded.
 mm_package <- basename(getwd())
-mm_url_field <- utils::packageDescription(mm_package)[["URL"]]
+mm_description <- utils::packageDescription(mm_package)
+mm_url_field <- mm_description[["URL"]]
 if (is.null(mm_url_field) || is.na(mm_url_field)) {
   mm_url_field <- ""
 }
 mm_urls <- strsplit(mm_url_field, ",\\s*")[[1L]]
 mm_docs_url <- if (length(mm_urls) > 1L) mm_urls[[2L]] else mm_url_field
 
-mm_theme <- bslib::bs_theme(
+mm_theme_bs <- bslib::bs_theme(
   version = 5,
   bg = "#FFFFFF",
-  fg = "#1B2A3B",
-  primary = "#0072B2",
+  fg = mm_ink,
+  primary = mm_accent,
   secondary = "#56B4E9",
   success = "#009E73",
   warning = "#E69F00",
-  danger = "#D55E00"
+  danger = "#D55E00",
+  base_font = c(
+    "system-ui", "-apple-system", "Segoe UI", "Roboto",
+    "Helvetica Neue", "Arial", "sans-serif"
+  )
 )
 
 mm_ui <- bslib::page_navbar(
   title = shiny::tagList(
-    shiny::img(src = "logo.png", height = "34px", alt = "maumauR logo"),
-    shiny::span(mm_package, class = "mm-title")
+    shiny::img(src = "logo.png", height = "36px", alt = "maumauR logo"),
+    shiny::div(
+      class = "d-inline-block align-middle",
+      shiny::span(mm_package, class = "mm-title"),
+      shiny::span("Mau Mau, simulated", class = "mm-tagline")
+    )
   ),
-  theme = mm_theme,
-  header = shiny::tags$head(
-    shiny::tags$link(
-      rel = "stylesheet",
-      type = "text/css",
-      href = "maumau.css"
+  window_title = paste(mm_package, "- Mau Mau, simulated"),
+  theme = mm_theme_bs,
+  header = shiny::tagList(
+    shiny::tags$head(
+      shiny::tags$link(
+        rel = "stylesheet",
+        type = "text/css",
+        href = "maumau.css"
+      )
+    ),
+    # A run over three player counts takes several seconds. Without this the
+    # distribution tab is two large blank white cards for the whole of it, with
+    # nothing to say that anything is happening.
+    shiny::useBusyIndicators(spinners = TRUE, pulse = TRUE),
+    shiny::busyIndicatorOptions(
+      spinner_type = "ring2",
+      spinner_color = mm_accent,
+      spinner_size = "3rem",
+      pulse_background = paste0(
+        "linear-gradient(120deg, #F1ECF8, ", mm_accent, ")"
+      )
     )
   ),
   bslib::nav_panel("Play vs AI", mod_play_ui("play")),

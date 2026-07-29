@@ -3,15 +3,18 @@
 mod_play_ui <- function(id) {
   ns <- shiny::NS(id)
   bslib::layout_sidebar(
+    fillable = FALSE,
     sidebar = bslib::sidebar(
       title = "Table",
+      width = 260,
       shiny::sliderInput(
         ns("n_players"),
         "Players",
         min = 2,
-        max = 4,
+        max = mm_max_players,
         value = 3,
-        step = 1
+        step = 1,
+        ticks = FALSE
       ),
       shiny::selectInput(
         ns("strategy"),
@@ -25,29 +28,38 @@ mod_play_ui <- function(id) {
         value = FALSE
       ),
       shiny::actionButton(ns("new_game"), "New game", class = "btn-primary"),
-      shiny::actionButton(ns("draw"), "Draw or pass"),
-      shiny::helpText(
-        "You are seat 1. Click a card to play it; greyed cards are not legal."
+      shiny::actionButton(
+        ns("draw"),
+        "Draw or pass",
+        class = "btn-outline-primary"
+      ),
+      shiny::p(
+        class = "mm-help",
+        "You are seat 1. Click a card to play it. Faded, dashed cards are",
+        "not legal on the current discard."
       )
     ),
+    # The discard pile and the running commentary stack in the narrow column:
+    # each is short, and side by side with the table they left a third of the
+    # viewport empty below the row.
     bslib::layout_columns(
       col_widths = c(4, 8),
-      bslib::card(
-        bslib::card_header("Discard pile"),
-        shiny::uiOutput(ns("top_card")),
-        shiny::uiOutput(ns("state"))
+      shiny::div(
+        class = "mm-stack",
+        bslib::card(
+          bslib::card_header("Discard pile"),
+          shiny::uiOutput(ns("top_card"))
+        ),
+        bslib::card(
+          class = "mm-stack-grow",
+          bslib::card_header("What happened"),
+          shiny::uiOutput(ns("log"))
+        )
       ),
       bslib::card(
-        bslib::card_header("Table"),
-        shiny::uiOutput(ns("opponents")),
-        shiny::hr(),
-        shiny::strong("Your hand"),
-        shiny::uiOutput(ns("hand"))
+        bslib::card_header("Your table"),
+        shiny::uiOutput(ns("table_state"))
       )
-    ),
-    bslib::card(
-      bslib::card_header("What happened"),
-      shiny::verbatimTextOutput(ns("log"))
     )
   )
 }
@@ -144,6 +156,11 @@ mod_play_server <- function(id) {
       }
     }
 
+    # Deal a hand as soon as the inputs exist, so the tab is never empty.
+    shiny::observeEvent(input$n_players, once = TRUE, {
+      start_game()
+    })
+
     shiny::observeEvent(input$new_game, {
       start_game()
     })
@@ -184,7 +201,11 @@ mod_play_server <- function(id) {
             ),
             footer = shiny::tagList(
               shiny::modalButton("Cancel"),
-              shiny::actionButton(session$ns("wild_ok"), "Play")
+              shiny::actionButton(
+                session$ns("wild_ok"),
+                "Play",
+                class = "btn-primary"
+              )
             ),
             easyClose = TRUE
           ))
@@ -204,84 +225,117 @@ mod_play_server <- function(id) {
 
     output$top_card <- shiny::renderUI({
       game <- state$game
-      shiny::req(game)
+      if (is.null(game)) {
+        return(mm_empty_state("Press \"New game\" to deal a table."))
+      }
       top <- maumauR::mm_top_card(game)
       shiny::tagList(
         shiny::div(
           class = "mm-hand",
-          mm_card_tag(top$type, top$color, top$value)
+          mm_card_tag(top$type, top$color, top$value, large = TRUE)
         ),
         shiny::p(
+          mm_colour_dot(top$active_color),
           shiny::strong("Colour in force: "),
           shiny::span(class = "mm-swatch", top$active_color)
+        ),
+        shiny::div(
+          class = "mm-stats",
+          mm_stat("Turn", game$turn),
+          mm_stat("Draw pile", length(game$draw)),
+          if (game$pending_draw > 0L) {
+            mm_stat("Stacked penalty", paste(game$pending_draw, "cards"))
+          }
         )
       )
     })
 
-    output$state <- shiny::renderUI({
+    output$table_state <- shiny::renderUI({
       game <- state$game
-      shiny::req(game)
-      shiny::tagList(
-        shiny::p(shiny::strong("Turn: "), game$turn),
-        shiny::p(shiny::strong("Draw pile: "), length(game$draw)),
-        if (game$pending_draw > 0L) {
-          shiny::p(
-            shiny::strong("Stacked penalty: "),
-            game$pending_draw,
-            " cards"
-          )
-        },
-        if (game$finished) {
-          shiny::p(shiny::strong("Finished."))
+      if (is.null(game)) {
+        return(mm_empty_state("No table yet.", mark = "♠"))
+      }
+      sizes <- lengths(game$hands)
+      seats <- seq_along(sizes)
+      hand <- mm_safely(maumauR::mm_hand(game, player = 1L))
+      playable <- !game$finished && game$current == 1L
+
+      status <- if (game$finished) {
+        if (is.na(game$winner)) {
+          "Nobody could move: the game ended undecided."
+        } else if (identical(game$winner, 1L)) {
+          paste0("You win after ", game$turn, " turns.")
         } else {
-          shiny::p(
-            shiny::strong("To move: "),
-            if (game$current == 1L) "you" else paste("seat", game$current)
+          paste0("Seat ", game$winner, " wins after ", game$turn, " turns.")
+        }
+      } else if (playable) {
+        "Your move."
+      } else {
+        paste0("Seat ", game$current, " is thinking.")
+      }
+
+      shiny::tagList(
+        shiny::p(shiny::strong(status)),
+        shiny::div(class = "mm-section", "Seats"),
+        shiny::div(
+          class = "mm-seats",
+          lapply(seats, function(seat) {
+            active <- !game$finished && game$current == seat
+            who <- if (seat == 1L) "You" else paste("Seat", seat)
+            # The count goes in a badge of its own. Set as plain text beside
+            # the seat number it read "Seat 2 5 cards" - two numbers and a
+            # space.
+            shiny::div(
+              class = paste(
+                "mm-seat",
+                if (active) "mm-seat-active" else ""
+              ),
+              title = paste0(who, ": ", mm_cards_word(sizes[[seat]])),
+              shiny::span(class = "mm-seat-name", who),
+              shiny::span(class = "mm-seat-count", sizes[[seat]]),
+              shiny::span(
+                class = "mm-seat-unit",
+                if (sizes[[seat]] == 1L) "card" else "cards"
+              )
+            )
+          })
+        ),
+        shiny::div(class = "mm-section", "Your hand"),
+        if (is.null(hand) || nrow(hand) == 0L) {
+          shiny::p("No cards left.")
+        } else {
+          shiny::div(
+            class = "mm-hand",
+            lapply(seq_len(nrow(hand)), function(i) {
+              mm_card_tag(
+                hand$type[[i]],
+                hand$color[[i]],
+                hand$value[[i]],
+                id = session$ns(paste0("card_", i)),
+                disabled = !(playable && hand$legal[[i]])
+              )
+            })
           )
         }
       )
     })
 
-    output$opponents <- shiny::renderUI({
-      game <- state$game
-      shiny::req(game)
-      sizes <- lengths(game$hands)
-      seats <- seq_along(sizes)[-1L]
-      shiny::tagList(lapply(seats, function(seat) {
-        shiny::p(
-          shiny::strong(paste0("Seat ", seat, ": ")),
-          sizes[[seat]],
-          " card(s)"
-        )
-      }))
-    })
-
-    output$hand <- shiny::renderUI({
-      game <- state$game
-      shiny::req(game)
-      hand <- mm_safely(maumauR::mm_hand(game, player = 1L))
-      shiny::req(hand)
-      if (nrow(hand) == 0L) {
-        return(shiny::p("No cards left."))
+    output$log <- shiny::renderUI({
+      if (length(state$log) == 0L) {
+        return(mm_empty_state("The running commentary appears here."))
       }
-      playable <- !game$finished && game$current == 1L
       shiny::div(
-        class = "mm-hand",
-        lapply(seq_len(nrow(hand)), function(i) {
-          mm_card_tag(
-            hand$type[[i]],
-            hand$color[[i]],
-            hand$value[[i]],
-            id = session$ns(paste0("card_", i)),
-            disabled = !(playable && hand$legal[[i]])
+        class = "mm-log",
+        lapply(seq_along(state$log), function(i) {
+          shiny::div(
+            class = paste(
+              "mm-log-line",
+              if (i == 1L) "mm-log-line-latest" else ""
+            ),
+            state$log[[i]]
           )
         })
       )
-    })
-
-    output$log <- shiny::renderText({
-      shiny::req(length(state$log) > 0L)
-      paste(state$log, collapse = "\n")
     })
   })
 }

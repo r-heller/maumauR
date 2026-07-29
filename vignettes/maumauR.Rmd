@@ -195,6 +195,26 @@ wild card is legal on any discard, and that insurance against a forced draw is
 worth more than the tempo lost by holding it. `mm_strategy_random()` goes the
 other way, finishing below chance and below greedy.
 
+## Matching the figures
+
+Every plot is an ordinary `ggplot` object, so you can keep building on it. The
+theme the package draws in is exported too, which is the shortest way to make a
+figure of your own sit beside the others.
+
+```{r}
+#| label: theme
+ggplot2::ggplot(mm_build_deck(), ggplot2::aes(y = type)) +
+  ggplot2::geom_bar(fill = "#0072B2", width = 0.66) +
+  ggplot2::labs(
+    title = "What is in the box",
+    x = "Cards",
+    y = NULL,
+    caption = "Four colours, five number faces each, and the special cards."
+  ) +
+  mm_theme() +
+  ggplot2::theme(panel.grid.major.y = ggplot2::element_blank())
+```
+
 ## Writing your own strategy
 
 A strategy is a function of `(hand, state)` returning the position of the card

@@ -3,13 +3,16 @@
 mod_distribution_ui <- function(id) {
   ns <- shiny::NS(id)
   bslib::layout_sidebar(
+    fillable = FALSE,
     sidebar = bslib::sidebar(
       title = "Simulation",
+      width = 260,
       shiny::checkboxGroupInput(
         ns("player_counts"),
         "Player counts",
         choices = c(2, 3, 4),
-        selected = c(2, 3, 4)
+        selected = c(2, 3, 4),
+        inline = TRUE
       ),
       shiny::sliderInput(
         ns("n"),
@@ -17,7 +20,8 @@ mod_distribution_ui <- function(id) {
         min = 50,
         max = 1000,
         value = 200,
-        step = 50
+        step = 50,
+        ticks = FALSE
       ),
       shiny::sliderInput(
         ns("bins"),
@@ -25,7 +29,8 @@ mod_distribution_ui <- function(id) {
         min = 5,
         max = 60,
         value = 25,
-        step = 5
+        step = 5,
+        ticks = FALSE
       ),
       shiny::selectInput(
         ns("strategy"),
@@ -34,19 +39,34 @@ mod_distribution_ui <- function(id) {
         selected = "greedy"
       ),
       shiny::numericInput(ns("seed"), "Seed", value = 1, min = 1, step = 1),
-      shiny::actionButton(ns("run"), "Run", class = "btn-primary")
+      shiny::actionButton(ns("run"), "Run", class = "btn-primary"),
+      shiny::p(
+        class = "mm-help",
+        "Both panels share an x scale across player counts, so the panels",
+        "can be read against each other."
+      )
     ),
+    # Full width, one above the other. Side by side, three histogram panels had
+    # about 130 px each and their tick labels ran into one another.
     bslib::layout_columns(
-      col_widths = c(6, 6),
+      col_widths = c(12, 12),
       bslib::card(
-        bslib::card_header("Game length"),
-        shiny::plotOutput(ns("length_plot"), height = "320px"),
-        shiny::tableOutput(ns("length_table"))
+        full_screen = TRUE,
+        bslib::card_header(
+          "How long is a game?",
+          shiny::uiOutput(ns("scenario"), inline = TRUE)
+        ),
+        shiny::plotOutput(ns("length_plot"), height = "330px"),
+        mm_scroll_table(ns("length_table"))
       ),
       bslib::card(
-        bslib::card_header("Cards drawn"),
-        shiny::plotOutput(ns("draw_plot"), height = "320px"),
-        shiny::tableOutput(ns("draw_table"))
+        full_screen = TRUE,
+        bslib::card_header(
+          "How much gets drawn?",
+          shiny::uiOutput(ns("scenario_draw"), inline = TRUE)
+        ),
+        shiny::plotOutput(ns("draw_plot"), height = "330px"),
+        mm_scroll_table(ns("draw_table"))
       )
     )
   )
@@ -54,8 +74,8 @@ mod_distribution_ui <- function(id) {
 
 mod_distribution_server <- function(id) {
   shiny::moduleServer(id, function(input, output, session) {
-    sims <- shiny::eventReactive(input$run, {
-      shiny::req(input$player_counts)
+    sims <- shiny::eventReactive(input$run, ignoreNULL = FALSE, {
+      shiny::req(input$player_counts, input$n)
       counts <- as.integer(input$player_counts)
       strategy <- mm_strategy_from(input$strategy)
       mm_safely({
@@ -71,28 +91,52 @@ mod_distribution_server <- function(id) {
       })
     })
 
-    output$length_plot <- shiny::renderPlot({
+    scenario <- shiny::reactive({
+      shiny::req(input$n, input$player_counts)
+      shiny::span(
+        class = "mm-scenario",
+        paste(
+          input$n, "games each",
+          "·", mm_strategy_title(input$strategy)
+        )
+      )
+    })
+
+    output$scenario <- shiny::renderUI(scenario())
+    output$scenario_draw <- shiny::renderUI(scenario())
+
+    output$length_plot <- shiny::renderPlot(res = mm_plot_res, {
       shiny::req(sims())
-      mm_safely(
+      mm_plot_safely(
         maumauR::mm_plot_game_length(sims(), bins = as.integer(input$bins))
       )
     })
 
-    output$draw_plot <- shiny::renderPlot({
+    output$draw_plot <- shiny::renderPlot(res = mm_plot_res, {
       shiny::req(sims())
-      mm_safely(
+      mm_plot_safely(
         maumauR::mm_plot_draws(sims(), bins = as.integer(input$bins))
       )
     })
 
-    output$length_table <- shiny::renderTable({
-      shiny::req(sims())
-      mm_safely(maumauR::mm_game_length(sims()))
-    })
+    output$length_table <- shiny::renderTable(
+      striped = TRUE,
+      hover = TRUE,
+      spacing = "s",
+      {
+        shiny::req(sims())
+        mm_tidy_table(mm_safely(maumauR::mm_game_length(sims())))
+      }
+    )
 
-    output$draw_table <- shiny::renderTable({
-      shiny::req(sims())
-      mm_safely(maumauR::mm_draw_summary(sims()))
-    })
+    output$draw_table <- shiny::renderTable(
+      striped = TRUE,
+      hover = TRUE,
+      spacing = "s",
+      {
+        shiny::req(sims())
+        mm_tidy_table(mm_safely(maumauR::mm_draw_summary(sims())))
+      }
+    )
   })
 }

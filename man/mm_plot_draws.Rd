@@ -17,7 +17,9 @@ mm_plot_draws(sims, bins = 30L, call = rlang::caller_env())
 A \code{ggplot} object.
 }
 \description{
-Draws the distribution of cards drawn per game, one panel per player count.
+Draws the distribution of cards drawn per game, one panel per player count,
+with a dashed line at each panel's median. A single player count is drawn
+without a strip and named in the caption instead.
 }
 \examples{
 sims <- mm_simulate(n = 30, n_players = 3, seed = 1)
@@ -30,6 +32,7 @@ mm_plot_draws(sims)
 Other plots:
 \code{\link[=mm_plot_game_length]{mm_plot_game_length()}},
 \code{\link[=mm_plot_strategy_compare]{mm_plot_strategy_compare()}},
-\code{\link[=mm_plot_win_rate]{mm_plot_win_rate()}}
+\code{\link[=mm_plot_win_rate]{mm_plot_win_rate()}},
+\code{\link[=mm_theme]{mm_theme()}}
 }
 \concept{plots}

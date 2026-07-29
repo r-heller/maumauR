@@ -16,8 +16,18 @@ A \code{ggplot} object.
 }
 \description{
 Averages the per-seat win rate of every strategy at the table, so that a
-strategy seated twice is not flattered by its extra seat. The dashed line
-is the rate expected if the strategy did not matter.
+strategy seated twice is not flattered by its extra seat. Bars run
+horizontally and share one order across panels - by overall mean win rate -
+so a strategy keeps its row and its colour from panel to panel. The dashed
+line is the rate expected if the strategy did not matter.
+}
+\details{
+Each panel scales its own x axis. A win rate at a two-player table is not
+comparable with one at a four-player table - chance alone pays 50 \% against
+25 \% - so what a reader should compare is each bar against its own panel's
+dashed line, and a shared axis would only leave the larger tables squeezed
+into a third of their width. A strategy that did not sit at a given table
+size is marked as such, so that an absent bar is not read as a zero.
 }
 \examples{
 sims <- mm_simulate(
@@ -39,6 +49,7 @@ mm_plot_strategy_compare(sims)
 Other plots:
 \code{\link[=mm_plot_draws]{mm_plot_draws()}},
 \code{\link[=mm_plot_game_length]{mm_plot_game_length()}},
-\code{\link[=mm_plot_win_rate]{mm_plot_win_rate()}}
+\code{\link[=mm_plot_win_rate]{mm_plot_win_rate()}},
+\code{\link[=mm_theme]{mm_theme()}}
 }
 \concept{plots}
