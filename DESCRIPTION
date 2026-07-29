@@ -1,7 +1,7 @@
 Package: maumauR
 Title: Simulation and Analysis of the DB Mau Mau Card Game
 Version: 0.1.0
-Authors@R: person("Raban", "Heller", email = "raban.heller@charite.de",
+Authors@R: person("Raban", "Heller", email = "raban.heller@uni-ulm.de",
     role = c("aut", "cre"), comment = c(ORCID = "0000-0001-8006-9742"))
 Description: Provides a configurable engine, Monte Carlo simulator, and
     strategy framework for the "der kleine ICE" Mau Mau card game, a

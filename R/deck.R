@@ -78,8 +78,8 @@ validate_mm_deck_spec <- function(x, call = rlang::caller_env()) {
 #' }
 #'
 #' The *number of number faces* (five per colour) is fixed by arithmetic once
-#' the specials are known; the face values themselves (`1:5`) remain a
-#' reconstruction pending a physical card count. Adjust `numbers`, `plus2`,
+#' the specials are known, and the face values `1:5` are confirmed against the
+#' physical deck. Adjust `numbers`, `plus2`,
 #' `skip`, and `wild` here and everything downstream follows. A specification
 #' whose total is not 32 is accepted but warns, so a wrongly built deck can
 #' never pass unnoticed.

@@ -40,9 +40,9 @@ spec
 
 The box states 32 cards. Four colours, one `+2` and one skip per colour, and
 four wild cards leave exactly five number faces per colour - which is how the
-default gets to 32. The face values themselves (`1:5`) are a reconstruction
-pending a physical card count; correct them here and every simulation, summary,
-and plot in the package follows.
+default gets to 32. The face values are `1:5`, confirmed against the physical
+deck; change them here and every simulation, summary, and plot in the package
+follows.
 
 Any specification that does not total 32 is accepted, but it warns, so a
 wrongly built deck can never pass unnoticed:

@@ -68,8 +68,8 @@ printed rules:
 }
 
 The \emph{number of number faces} (five per colour) is fixed by arithmetic once
-the specials are known; the face values themselves (\code{1:5}) remain a
-reconstruction pending a physical card count. Adjust \code{numbers}, \code{plus2},
+the specials are known, and the face values \code{1:5} are confirmed against the
+physical deck. Adjust \code{numbers}, \code{plus2},
 \code{skip}, and \code{wild} here and everything downstream follows. A specification
 whose total is not 32 is accepted but warns, so a wrongly built deck can
 never pass unnoticed.

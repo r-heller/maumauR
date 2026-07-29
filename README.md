@@ -108,9 +108,9 @@ vignette for the code.
 > **Deck note:** The box lists 32 cards (`Inhalt: 32 Spielkarten`). Four
 > colours, one `+2` and one skip per colour, and four wild cards leave exactly
 > **five number faces per colour**, which is how `mm_deck_spec()` reaches 32.
-> The face values themselves (`1:5`) are a reconstruction pending a physical
-> card count. Correct them in `mm_deck_spec()` and everything downstream
-> follows; any specification that does not total 32 is accepted but warns.
+> The face values are `1:5`, confirmed against the physical deck. Change them
+> in `mm_deck_spec()` and everything downstream follows; any specification
+> that does not total 32 is accepted but warns.
 
 ## Documentation
 
