@@ -1,0 +1,70 @@
+url: https://r-heller.github.io/maumauR/
+
+template:
+  bootstrap: 5
+  bslib:
+    primary: "#0072B2"
+    base_font: {google: "Source Sans 3"}
+
+home:
+  title: Simulation and analysis of the DB Mau Mau card game
+  description: >
+    A configurable engine, Monte Carlo simulator, strategy framework, and
+    Shiny application for the "der kleine ICE" Mau Mau card game.
+
+navbar:
+  structure:
+    left: [intro, reference, articles, news]
+    right: [search, github]
+
+reference:
+  - title: The deck
+    desc: >
+      The single source of truth for deck composition. Correct it here and
+      everything downstream follows.
+    contents:
+      - mm_deck_spec
+      - mm_build_deck
+
+  - title: The engine
+    desc: Deal a table, advance it one action at a time, or play it out.
+    contents:
+      - mm_new_game
+      - mm_step
+      - mm_hand
+      - mm_play_game
+
+  - title: Strategies
+    desc: How an artificial seat decides what to play.
+    contents:
+      - mm_strategy
+
+  - title: Simulation and summaries
+    desc: Many games, and the tidy tables built from them.
+    contents:
+      - mm_simulate
+      - mm_win_rate
+      - mm_game_length
+      - mm_draw_summary
+
+  - title: Plots
+    desc: Every plot returns a ggplot object you can keep building on.
+    contents:
+      - mm_plot_win_rate
+      - mm_plot_game_length
+      - mm_plot_draws
+      - mm_plot_strategy_compare
+
+  - title: Application
+    contents:
+      - mm_run_app
+
+  - title: Package
+    contents:
+      - maumauR-package
+
+articles:
+  - title: Get started
+    navbar: ~
+    contents:
+      - maumauR

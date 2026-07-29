@@ -1,0 +1,236 @@
+---
+title: "Getting started with maumauR"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Getting started with maumauR}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r}
+#| label: setup
+#| include: false
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>",
+  fig.width = 7,
+  fig.height = 4,
+  dpi = 96
+)
+```
+
+You have a box of "der kleine ICE", the Deutsche Bahn children's Mau Mau deck,
+and a question the box does not answer: does it matter where you sit? This
+vignette walks from the deck to that answer in five minutes.
+
+```{r}
+#| label: attach
+library(maumauR)
+```
+
+## The deck is the single source of truth
+
+Everything the package does is derived from one specification.
+
+```{r}
+#| label: spec
+spec <- mm_deck_spec()
+spec
+```
+
+The box states 32 cards. Four colours, one `+2` and one skip per colour, and
+four wild cards leave exactly five number faces per colour - which is how the
+default gets to 32. The face values themselves (`1:5`) are a reconstruction
+pending a physical card count; correct them here and every simulation, summary,
+and plot in the package follows.
+
+Any specification that does not total 32 is accepted, but it warns, so a
+wrongly built deck can never pass unnoticed:
+
+```{r}
+#| label: spec-warning
+wrong <- try(mm_deck_spec(numbers = 0:5), silent = TRUE)
+```
+
+`mm_build_deck()` turns the specification into one row per physical card:
+
+```{r}
+#| label: deck
+deck <- mm_build_deck(spec)
+deck
+table(deck$type)
+```
+
+## One game
+
+`mm_play_game()` deals a table, plays it out against artificial opponents, and
+returns a single tidy row.
+
+```{r}
+#| label: one-game
+mm_play_game(n_players = 3, seed = 1)
+```
+
+The `trace` column is the audit trail. Switch it on and every step records the
+size of every pile, which is how the package checks that no card is ever lost
+or duplicated:
+
+```{r}
+#| label: trace
+traced <- mm_play_game(n_players = 3, seed = 1, trace = TRUE)
+head(traced$trace[[1]])
+unique(traced$trace[[1]]$total)
+```
+
+## Turn by turn
+
+For an interactive front end - or for understanding a rule - play one action at
+a time.
+
+```{r}
+#| label: step
+game <- mm_new_game(n_players = 3, seed = 42)
+game
+mm_top_card(game)
+mm_hand(game, player = 1)
+mm_legal_moves(game)
+```
+
+`mm_step()` advances the game. Left alone it asks the seat's strategy; given a
+card position it plays that card, which is what the Shiny application does with
+your clicks.
+
+```{r}
+#| label: step-play
+game <- mm_step(game, card = mm_legal_moves(game)[[1]])
+game
+```
+
+## Many games
+
+`mm_simulate()` repeats the whole thing and returns one row per game.
+
+```{r}
+#| label: simulate
+sims <- mm_simulate(n = 300, n_players = 3, seed = 7)
+sims
+```
+
+### Does the seat matter?
+
+```{r}
+#| label: win-rate
+mm_win_rate(sims)
+```
+
+```{r}
+#| label: win-rate-plot
+mm_plot_win_rate(sims)
+```
+
+Seat 1 moves first and gets there first often enough to show up: with identical
+opponents, the first seat wins more than its share, and the win rate falls
+monotonically down the table. Three hundred games is not enough to pin that
+down - over 4000 games per table size the first seat sits at 0.515 (two
+players), 0.375 (three), and 0.283 (four), against chance levels of 0.500,
+0.333, and 0.250.
+
+### How long do games run, and how much drawing is there?
+
+```{r}
+#| label: distributions
+by_size <- dplyr::bind_rows(
+  mm_simulate(n = 300, n_players = 2, seed = 21),
+  mm_simulate(n = 300, n_players = 3, seed = 22),
+  mm_simulate(n = 300, n_players = 4, seed = 23)
+)
+
+mm_game_length(by_size)
+mm_draw_summary(by_size)
+```
+
+```{r}
+#| label: length-plot
+mm_plot_game_length(by_size, bins = 25)
+```
+
+```{r}
+#| label: draws-plot
+mm_plot_draws(by_size, bins = 25)
+```
+
+Game length is strongly right-skewed: most games end quickly, a few drag on
+while the `+2` cards circulate.
+
+## Comparing strategies
+
+Three strategies ship with the package, and writing your own is a matter of
+writing a function. Seat them at one table and see:
+
+```{r}
+#| label: strategies
+mixed <- mm_simulate(
+  n = 300,
+  n_players = 3,
+  strategies = list(
+    mm_strategy_greedy(),
+    mm_strategy_random(),
+    mm_strategy_hold_wilds()
+  ),
+  seed = 11
+)
+mm_win_rate(mixed)
+```
+
+```{r}
+#| label: strategy-plot
+mm_plot_strategy_compare(mixed)
+```
+
+Three hundred games at one seating is a demonstration, not evidence. Rotating a
+single `hold_wilds` seat through every position against greedy opponents, 1500
+games per rotation, hoarding does pay: it lands at 0.550 (two players), 0.378
+(three), and 0.286 (four) against chance levels of 0.500, 0.333, and 0.250. A
+wild card is legal on any discard, and that insurance against a forced draw is
+worth more than the tempo lost by holding it. `mm_strategy_random()` goes the
+other way, finishing below chance and below greedy.
+
+## Writing your own strategy
+
+A strategy is a function of `(hand, state)` returning the position of the card
+to play, or `NA` to draw and pass. It must return one of `state$legal`.
+
+```{r}
+#| label: custom
+lowest_first <- structure(
+  function(hand, state) {
+    if (length(state$legal) == 0) {
+      return(NA_integer_)
+    }
+    legal <- state$legal
+    values <- hand$value[legal]
+    values[is.na(values)] <- 99L
+    legal[[which.min(values)]]
+  },
+  class = c("mm_strategy", "function"),
+  strategy_name = "lowest_first",
+  color_picker = function(hand, state) state$active_color
+)
+
+mm_win_rate(mm_simulate(
+  n = 200,
+  n_players = 3,
+  strategies = list(lowest_first, mm_strategy_greedy(), mm_strategy_greedy()),
+  seed = 5
+))
+```
+
+## Playing it yourself
+
+```r
+mm_run_app()
+```
+
+The application has four tabs: play a hand against the artificial opponents,
+explore win rates by seat, compare strategies head to head, and inspect the
+game-length and draw-count distributions.
