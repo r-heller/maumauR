@@ -1,0 +1,38 @@
+Package: maumauR
+Title: Simulation and Analysis of the DB Mau Mau Card Game
+Version: 0.1.0
+Authors@R: person("Raban", "Heller", email = "raban.heller@charite.de",
+    role = c("aut", "cre"), comment = c(ORCID = "0000-0001-8006-9742"))
+Description: Provides a configurable engine, Monte Carlo simulator, and
+    strategy framework for the "der kleine ICE" Mau Mau card game, a
+    German children's variant of Mau Mau with draw-two, skip, and wild
+    cards. Includes win-rate estimation by seat and player count, pluggable
+    artificial strategies for comparison, game-length and draw-count
+    distribution summaries, and an interactive Shiny application for playing
+    against the simulated opponents.
+License: MIT + file LICENSE
+URL: https://github.com/r-heller/maumauR, https://r-heller.github.io/maumauR/
+BugReports: https://github.com/r-heller/maumauR/issues
+Encoding: UTF-8
+Roxygen: list(markdown = TRUE)
+Config/testthat/edition: 3
+Depends:
+    R (>= 4.1)
+Imports:
+    cli,
+    dplyr,
+    ggplot2,
+    rlang,
+    stats,
+    tibble,
+    utils
+Suggests:
+    bslib,
+    covr,
+    knitr,
+    rmarkdown,
+    shiny,
+    testthat (>= 3.0.0),
+    withr
+VignetteBuilder: knitr
+Config/roxygen2/version: 8.0.0
