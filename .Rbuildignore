@@ -1,0 +1,17 @@
+^maumauR\.Rproj$
+^\.Rproj\.user$
+^README\.Rmd$
+^\.github$
+^docs$
+^pkgdown$
+^_pkgdown\.ya?ml$
+^cran-comments\.md$
+^LICENSE\.md$
+^CLAUDE.*\.md$
+^\.claude$
+^\.orchestration$
+^codecov\.yml$
+^\.lintr$
+^revdep$
+^doc$
+^Meta$
