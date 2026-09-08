@@ -1,0 +1,211 @@
+# maumauR
+
+Simulation and analysis of the DB **“der kleine ICE” Mau Mau** card
+game - a German children’s Mau Mau variant with draw-two, skip, and wild
+cards.
+
+## Features
+
+- A configurable 32-card deck with a **single point of correction** in
+  [`mm_deck_spec()`](https://r-heller.github.io/maumauR/reference/mm_deck_spec.md);
+  the engine, the summaries, the plots, and the app all read the deck
+  from it
+- A rules engine with true `+2` stacking, skips, wild colour choice,
+  draw-pile reshuffling, and an optional “Mau” announcement penalty
+- Turn-by-turn control
+  ([`mm_new_game()`](https://r-heller.github.io/maumauR/reference/mm_new_game.md),
+  [`mm_step()`](https://r-heller.github.io/maumauR/reference/mm_step.md))
+  as well as whole games
+  ([`mm_play_game()`](https://r-heller.github.io/maumauR/reference/mm_play_game.md))
+- Monte Carlo win-rate estimation by seat and player count
+- Pluggable artificial strategies (greedy, random, hold-wilds), and a
+  two-line recipe for writing your own
+- Game-length and draw-count distribution summaries, all tidy tibbles
+- An interactive Shiny application to play against the simulated
+  opponents
+
+## Installation
+
+``` r
+
+# install.packages("remotes")
+remotes::install_github("r-heller/maumauR")
+```
+
+## Quick start
+
+``` r
+
+library(maumauR)
+
+# One game, one tidy row
+mm_play_game(n_players = 3, seed = 1)
+
+# Many games
+sims <- mm_simulate(n = 1000, n_players = 3, seed = 1)
+mm_win_rate(sims)
+mm_plot_win_rate(sims)
+
+# Put strategies against each other
+mixed <- mm_simulate(
+  n = 1000,
+  n_players = 3,
+  strategies = list(
+    mm_strategy_greedy(),
+    mm_strategy_random(),
+    mm_strategy_hold_wilds()
+  ),
+  seed = 2
+)
+mm_plot_strategy_compare(mixed)
+
+# Play it yourself
+mm_run_app()
+```
+
+## What the simulations say
+
+Numbers below are from 4000 games per table size with identical greedy
+opponents, and 1500 games per seat rotation for the head-to-head runs.
+
+**Moving first helps, and win rate falls monotonically down the table.**
+At three and four players the first seat is clearly above chance (its
+95% confidence interval excludes it); at two players the edge is within
+noise.
+
+| Players | Seat 1 | Seat 2 | Seat 3 | Seat 4 | Chance |
+|---------|--------|--------|--------|--------|--------|
+| 2       | 0.515  | 0.485  |        |        | 0.500  |
+| 3       | 0.375  | 0.325  | 0.300  |        | 0.333  |
+| 4       | 0.283  | 0.249  | 0.245  | 0.223  | 0.250  |
+
+**Hoarding wild cards pays.** Rotating one `hold_wilds` seat through
+every position against greedy opponents, it finishes three to five
+points above chance (0.550, 0.378, and 0.286 at two, three, and four
+players) - keeping a card that is legal on any discard is worth more
+than the tempo lost by not playing it.
+[`mm_strategy_random()`](https://r-heller.github.io/maumauR/reference/mm_strategy.md)
+goes the other way, winning 0.291 where the greedy seats around it win
+0.354, at three players.
+
+**Games are short and right-skewed.** Mean turns and mean cards drawn
+both grow by roughly five per extra player, but the tail is long: a
+four-player game averages 29 turns and occasionally runs past 100.
+
+| Players | Mean turns | Median | Max | Mean cards drawn |
+|---------|------------|--------|-----|------------------|
+| 2       | 18.9       | 16     | 115 | 8.3              |
+| 3       | 23.9       | 21     | 97  | 10.3             |
+| 4       | 29.0       | 26     | 115 | 12.6             |
+
+None of the 12000 simulated games failed to finish.
+
+Reproduce any of these with
+[`mm_simulate()`](https://r-heller.github.io/maumauR/reference/mm_simulate.md)
+and the summary functions; see the vignette for the code.
+
+## The deck
+
+> **Deck note:** The box lists 32 cards (`Inhalt: 32 Spielkarten`). Four
+> colours, one `+2` and one skip per colour, and four wild cards leave
+> exactly **five number faces per colour**, which is how
+> [`mm_deck_spec()`](https://r-heller.github.io/maumauR/reference/mm_deck_spec.md)
+> reaches 32. The face values are `1:5`, confirmed against the physical
+> deck. Change them in
+> [`mm_deck_spec()`](https://r-heller.github.io/maumauR/reference/mm_deck_spec.md)
+> and everything downstream follows; any specification that does not
+> total 32 is accepted but warns.
+
+## Documentation
+
+Reference and articles: <https://r-heller.github.io/maumauR/>
+
+``` r
+
+vignette("maumauR")
+```
+
+# Package index
+
+## The deck
+
+The single source of truth for deck composition. Correct it here and
+everything downstream follows.
+
+- [`mm_deck_spec()`](https://r-heller.github.io/maumauR/reference/mm_deck_spec.md)
+  [`print(`*`<mm_deck_spec>`*`)`](https://r-heller.github.io/maumauR/reference/mm_deck_spec.md)
+  : Deck specification for "der kleine ICE" Mau Mau
+- [`mm_build_deck()`](https://r-heller.github.io/maumauR/reference/mm_build_deck.md)
+  : Build the card table for a deck specification
+
+## The engine
+
+Deal a table, advance it one action at a time, or play it out.
+
+- [`mm_new_game()`](https://r-heller.github.io/maumauR/reference/mm_new_game.md)
+  [`print(`*`<mm_game>`*`)`](https://r-heller.github.io/maumauR/reference/mm_new_game.md)
+  : Start a game of Mau Mau
+- [`mm_step()`](https://r-heller.github.io/maumauR/reference/mm_step.md)
+  : Advance a game by one action
+- [`mm_hand()`](https://r-heller.github.io/maumauR/reference/mm_hand.md)
+  [`mm_legal_moves()`](https://r-heller.github.io/maumauR/reference/mm_hand.md)
+  [`mm_top_card()`](https://r-heller.github.io/maumauR/reference/mm_hand.md)
+  : Inspect a game in progress
+- [`mm_play_game()`](https://r-heller.github.io/maumauR/reference/mm_play_game.md)
+  : Play one complete game of Mau Mau
+
+## Strategies
+
+How an artificial seat decides what to play.
+
+- [`mm_strategy_greedy()`](https://r-heller.github.io/maumauR/reference/mm_strategy.md)
+  [`mm_strategy_random()`](https://r-heller.github.io/maumauR/reference/mm_strategy.md)
+  [`mm_strategy_hold_wilds()`](https://r-heller.github.io/maumauR/reference/mm_strategy.md)
+  [`print(`*`<mm_strategy>`*`)`](https://r-heller.github.io/maumauR/reference/mm_strategy.md)
+  : Artificial strategies
+
+## Simulation and summaries
+
+Many games, and the tidy tables built from them.
+
+- [`mm_simulate()`](https://r-heller.github.io/maumauR/reference/mm_simulate.md)
+  : Simulate many games of Mau Mau
+- [`mm_win_rate()`](https://r-heller.github.io/maumauR/reference/mm_win_rate.md)
+  : Win rate by seat
+- [`mm_game_length()`](https://r-heller.github.io/maumauR/reference/mm_game_length.md)
+  : Game-length summary
+- [`mm_draw_summary()`](https://r-heller.github.io/maumauR/reference/mm_draw_summary.md)
+  : Draw-count summary
+
+## Plots
+
+Every plot returns a ggplot object you can keep building on.
+
+- [`mm_plot_win_rate()`](https://r-heller.github.io/maumauR/reference/mm_plot_win_rate.md)
+  : Plot win rate by seat
+- [`mm_plot_game_length()`](https://r-heller.github.io/maumauR/reference/mm_plot_game_length.md)
+  : Plot the game-length distribution
+- [`mm_plot_draws()`](https://r-heller.github.io/maumauR/reference/mm_plot_draws.md)
+  : Plot the draw-count distribution
+- [`mm_plot_strategy_compare()`](https://r-heller.github.io/maumauR/reference/mm_plot_strategy_compare.md)
+  : Compare strategies head to head
+- [`mm_theme()`](https://r-heller.github.io/maumauR/reference/mm_theme.md)
+  : The package plot theme
+
+## Application
+
+- [`mm_run_app()`](https://r-heller.github.io/maumauR/reference/mm_run_app.md)
+  : Launch the Mau Mau Shiny application
+
+## Package
+
+- [`maumauR`](https://r-heller.github.io/maumauR/reference/maumauR-package.md)
+  [`maumauR-package`](https://r-heller.github.io/maumauR/reference/maumauR-package.md)
+  : maumauR: Simulation and Analysis of the DB Mau Mau Card Game
+
+# Articles
+
+### Get started
+
+- [Getting started with
+  maumauR](https://r-heller.github.io/maumauR/articles/maumauR.md):
