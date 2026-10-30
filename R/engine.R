@@ -94,7 +94,6 @@ mm_new_game <- function(n_players = 3L,
   .check_class(spec, "mm_deck_spec", call = call)
   .check_flag(announce_penalty, call = call)
   .check_flag(trace, call = call)
-  strategies <- .check_strategies(strategies, n_players, call = call)
 
   if (!is.null(seed)) {
     seed <- .check_count(seed, min = -.Machine$integer.max, call = call)
@@ -104,19 +103,8 @@ mm_new_game <- function(n_players = 3L,
   }
 
   deck <- mm_build_deck(spec, call = call)
-  needed <- n_players * hand_size + 1L
-  if (nrow(deck) < needed) {
-    cli::cli_abort(
-      c(
-        "The deck is too small for this table.",
-        "x" = "{nrow(deck)} card{?s} cannot deal {hand_size} each to \\
-               {n_players} player{?s} plus an opening card.",
-        "i" = "Increase the deck in {.fn mm_deck_spec} or lower \\
-               {.arg hand_size}."
-      ),
-      call = call
-    )
-  }
+  .check_deal_size(n_players, hand_size, nrow(deck), call)
+  strategies <- .check_strategies(strategies, n_players, call = call)
   if (length(spec$colours) == 0L) {
     cli::cli_abort(
       c(

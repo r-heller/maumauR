@@ -51,6 +51,10 @@ mm_simulate <- function(n = 100L,
   max_turns <- .check_count(max_turns, min = 1L, call = call)
   .check_flag(verbose, call = call)
   .check_class(spec, "mm_deck_spec", call = call)
+  hand_size <- .check_count(hand_size, min = 1L, call = call)
+  .check_flag(announce_penalty, call = call)
+  .check_flag(trace, call = call)
+  .check_deal_size(n_players, hand_size, nrow(mm_build_deck(spec, call = call)), call)
   strategies <- .check_strategies(strategies, n_players, call = call)
 
   if (!is.null(seed)) {

@@ -36,6 +36,17 @@ German children's Mau Mau variant with draw-two, skip, and wild cards.
 remotes::install_github("r-heller/maumauR")
 ```
 
+To install this checkout with R 4.1 or later:
+
+```r
+install.packages("remotes")
+remotes::install_deps(dependencies = TRUE)
+remotes::install_local(".", dependencies = FALSE)
+```
+
+Counts and seeds must be finite integers. A deal must leave at least one card
+for the discard pile; impossible deals fail before allocating player state.
+
 ## Quick start
 
 ```r

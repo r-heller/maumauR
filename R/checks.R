@@ -38,9 +38,9 @@
 .check_count <- function(x,
                          arg = rlang::caller_arg(x),
                          min = 0L,
-                         max = Inf,
+                         max = .Machine$integer.max,
                          call = rlang::caller_env()) {
-  ok <- is.numeric(x) && length(x) == 1L && !is.na(x) && x == trunc(x)
+  ok <- is.numeric(x) && length(x) == 1L && is.finite(x) && x == trunc(x)
   if (!ok) {
     cli::cli_abort(
       c(
@@ -50,6 +50,8 @@
       call = call
     )
   }
+  min <- base::max(min, -.Machine$integer.max)
+  max <- base::min(max, .Machine$integer.max)
   if (x < min || x > max) {
     cli::cli_abort(
       c(
@@ -172,6 +174,17 @@
     }
   } else {
     assign(".Random.seed", state, envir = globalenv())
+  }
+  invisible(NULL)
+}
+
+# Reject impossible deals before allocating one strategy or hand per seat.
+.check_deal_size <- function(n_players, hand_size, deck_size, call) {
+  needed <- as.double(n_players) * hand_size + 1
+  if (deck_size < needed) {
+    cli::cli_abort(c("The deck is too small for this table.",
+      x = "{deck_size} cards cannot deal {hand_size} each to {n_players} players plus an opening card.",
+      i = "Increase the deck or lower hand_size or n_players."), call = call)
   }
   invisible(NULL)
 }
